@@ -33,6 +33,23 @@ impl Node {
         self.quic_connection.send_to(&*buf,addr).unwrap();
         println!("Writing buffer");
     }
+
+    pub fn get_v4_addr (&self) -> Ipv4Addr {
+        self.ipv4
+    }
+
+    pub fn get_v6_addr (&self) -> Ipv6Addr {
+        self.ipv6
+    }
+
+    pub fn send_shutdown(&self, addr: SocketAddr) {
+        let mut buf:Vec<u8> = Vec::with_capacity(5);
+        buf.push(3_u8);
+        buf.push(self.node_id);
+        buf.push(0_u8);
+        buf.push(0_u8);
+        self.quic_connection.send_to(&*buf,addr).unwrap();
+    }
 }
 
 impl fmt::Debug for Node {
