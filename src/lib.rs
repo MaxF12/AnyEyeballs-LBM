@@ -9,7 +9,9 @@ pub struct Node {
     ipv6: Ipv6Addr,
     total_loads: Vec<usize>,
     v4_loads: Vec<usize>,
-    v6_loads: Vec<usize>
+    v6_loads: Vec<usize>,
+    v4_state: bool,
+    v6_state: bool,
 }
 
 impl Node {
@@ -21,7 +23,9 @@ impl Node {
             ipv6,
             total_loads: vec![],
             v4_loads: vec![],
-            v6_loads: vec![]
+            v6_loads: vec![],
+            v4_state: true,
+            v6_state: true,
         }
     }
 
@@ -42,12 +46,37 @@ impl Node {
         self.ipv6
     }
 
+    pub fn get_v4_state (&self) -> bool {
+        self.v4_state
+    }
+
+    pub fn get_v6_state (&self) -> bool {
+        self.v6_state
+    }
+
+    pub fn set_v4_state (&mut self, state: bool) {
+        self.v4_state = state;
+    }
+
+    pub fn set_v6_state (&mut self, state: bool) {
+        self.v6_state = state;
+    }
+
     pub fn send_shutdown(&self, addr: SocketAddr) {
         let mut buf:Vec<u8> = Vec::with_capacity(5);
         buf.push(3_u8);
         buf.push(self.node_id);
         buf.push(0_u8);
         buf.push(0_u8);
+        self.quic_connection.send_to(&*buf,addr).unwrap();
+    }
+
+    pub fn send_start(&self, addr: SocketAddr) {
+        let mut buf:Vec<u8> = Vec::with_capacity(5);
+        buf.push(3_u8);
+        buf.push(self.node_id);
+        buf.push(1_u8);
+        buf.push(1_u8);
         self.quic_connection.send_to(&*buf,addr).unwrap();
     }
 }
