@@ -9,7 +9,7 @@ const MAX_NODES: u8 = 64;
 fn main() {
     let mut nodes = HashMap::new();
     let socket = UdpSocket::bind(ORCH_ADDR).unwrap();
-    let _quic_config = quiche::Config::new(quiche::PROTOCOL_VERSION).unwrap();
+    //let _quic_config = quiche::Config::new(quiche::PROTOCOL_VERSION).unwrap();
     let mut v4_boxes = HashMap::new();
     let mut v6_boxes = HashMap::new();
     //let conn = quiche::accept(&scid, None, &mut quic_config).unwrap();
