@@ -1,41 +1,47 @@
 //use quiche::Connection;
 use std::net::{Ipv4Addr, Ipv6Addr, UdpSocket, SocketAddr};
 use core::fmt;
+use std::collections::{LinkedList, HashMap};
+use std::time;
+use std::time::{SystemTime, UNIX_EPOCH};
+use std::fs::File;
+use std::io::Write;
 
 pub struct Node {
     quic_connection: UdpSocket,
+    addr: SocketAddr,
     node_id: u8,
     ipv4: Ipv4Addr,
     ipv6: Ipv6Addr,
     total_loads: Vec<usize>,
-    v4_loads: Vec<usize>,
-    v6_loads: Vec<usize>,
+    v4_loads: LinkedList<usize>,
+    v6_loads: LinkedList<usize>,
     v4_state: bool,
     v6_state: bool,
 }
 
 impl Node {
-    pub fn new(quic_connection: UdpSocket, node_id: u8, ipv4: Ipv4Addr, ipv6: Ipv6Addr) -> Node {
+    pub fn new(quic_connection: UdpSocket,addr: SocketAddr ,node_id: u8, ipv4: Ipv4Addr, ipv6: Ipv6Addr) -> Node {
         Node{
             quic_connection,
+            addr,
             node_id,
             ipv4,
             ipv6,
             total_loads: vec![],
-            v4_loads: vec![],
-            v6_loads: vec![],
+            v4_loads: LinkedList::new(),
+            v6_loads: LinkedList::new(),
             v4_state: true,
             v6_state: true,
         }
     }
 
-    pub fn ok_join (&self, addr: SocketAddr) {
+    pub fn ok_join (&self) {
         let mut buf:Vec<u8> = Vec::with_capacity(2);
         // Flag 000 for join
         buf.push(4_u8);
         buf.push(self.node_id);
-        self.quic_connection.send_to(&*buf,addr).unwrap();
-        println!("Writing buffer");
+        self.quic_connection.send_to(&*buf,self.addr).unwrap();
     }
 
     pub fn get_v4_addr (&self) -> Ipv4Addr {
@@ -62,22 +68,52 @@ impl Node {
         self.v6_state = state;
     }
 
-    pub fn send_shutdown(&self, addr: SocketAddr) {
-        let mut buf:Vec<u8> = Vec::with_capacity(5);
-        buf.push(3_u8);
-        buf.push(self.node_id);
-        buf.push(0_u8);
-        buf.push(0_u8);
-        self.quic_connection.send_to(&*buf,addr).unwrap();
+    pub fn add_new_v4_load (&mut self, load: usize) {
+        self.v4_loads.push_back(load);
+        if self.v4_loads.len() > 100 {
+            self.v4_loads.pop_front();
+        }
     }
 
-    pub fn send_start(&self, addr: SocketAddr) {
+    pub fn get_avg_v4_load (&self) -> usize {
+        if self.v4_loads.len() == 0 {
+            0
+        } else {
+            self.v4_loads.iter().sum::<usize>() as usize / self.v4_loads.len() as usize
+        }
+    }
+
+    pub fn add_new_v6_load (&mut self, load: usize) {
+        self.v6_loads.push_back(load);
+        if self.v6_loads.len() > 100 {
+            self.v6_loads.pop_front();
+        }
+    }
+
+    pub fn get_avg_v6_load (&self) -> usize {
+        if self.v6_loads.len() == 0 {
+            0
+        } else {
+            self.v6_loads.iter().sum::<usize>() as usize / self.v6_loads.len() as usize
+        }
+    }
+
+    pub fn send_shutdown(&self) {
+        let mut buf:Vec<u8> = Vec::with_capacity(5);
+        buf.push(3_u8);
+        buf.push(self.node_id);
+        buf.push(0_u8);
+        buf.push(0_u8);
+        self.quic_connection.send_to(&*buf,self.addr).unwrap();
+    }
+
+    pub fn send_start(&self) {
         let mut buf:Vec<u8> = Vec::with_capacity(5);
         buf.push(3_u8);
         buf.push(self.node_id);
         buf.push(1_u8);
         buf.push(1_u8);
-        self.quic_connection.send_to(&*buf,addr).unwrap();
+        self.quic_connection.send_to(&*buf,self.addr).unwrap();
     }
 }
 
@@ -96,4 +132,13 @@ pub fn send_error(sock: UdpSocket, addr: SocketAddr, err: u8) {
     sock.send_to(&*buf, addr).unwrap();
     println!("Writing buffer");
 
+}
+pub fn log(nodes: &HashMap<u8,Node>, fp: &mut File) {
+    let ts = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+    let mut new_log = "{".to_owned()+ &ts.to_string();
+    for node in nodes {
+        new_log = new_log+",{"+&node.0.to_string()+","+&node.1.v4_loads.back().unwrap().to_string()+","+&node.1.v6_loads.back().unwrap().to_string()+"}";
+    }
+    new_log = new_log + "}\n";
+    fp.write(new_log.as_bytes());
 }
