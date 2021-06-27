@@ -69,13 +69,13 @@ fn main() {
             // New status
             2 => {
                 let node = nodes.get_mut(&buffer[1]).unwrap();
-                //println!("Got new status");
                 let old_v4_avg = node.get_avg_v4_load();
                 let old_v6_avg = node.get_avg_v6_load();
+                let capacity = buffer[2];
                 let v4_load = buffer[3];
                 let v6_load = buffer[4];
-                node.add_new_v4_load(v4_load.into());
-                node.add_new_v6_load(v6_load.into());
+                node.add_new_v4_load(v4_load as f64/capacity as f64);
+                node.add_new_v6_load(v6_load as f64/capacity as f64);
                 if buffer[5] == 1 {
                     node.set_v4_state(true);
                 } else {
@@ -88,12 +88,13 @@ fn main() {
                 }
                 let new_v4_avg = node.get_avg_v4_load();
                 let new_v6_avg = node.get_avg_v6_load();
+                println!("{:?}",new_v6_avg);
                 match v4_load {
                     0 => {
                         // Threshold
                         if false {
                             if !node.get_v4_state() {
-                                node.send_start();
+                                node.send_start_v4();
                                 *v4_boxes.get_mut(&node.get_v4_addr()).unwrap() -= 1;
                             }
                         }
@@ -105,7 +106,7 @@ fn main() {
                                 if node.get_v4_state() {
                                     //There are already nodes with this ip address that are deactivated, deactivate this one too
                                     if v4_boxes[&node.get_v4_addr()] > 0 {
-                                        node.send_shutdown();
+                                        node.send_shutdown_v4();
                                         *v4_boxes.get_mut(&node.get_v4_addr()).unwrap() += 1;
                                     } else {
                                         let mut other_addr_free = false;
@@ -117,7 +118,7 @@ fn main() {
                                         }
                                         // If there is at least one other set of addresses available, turn this node off
                                         if other_addr_free {
-                                            node.send_shutdown();
+                                            node.send_shutdown_v4();
                                             *v4_boxes.get_mut(&node.get_v4_addr()).unwrap() += 1;
                                         }
                                     }
@@ -128,43 +129,67 @@ fn main() {
                         if  true {
                             // Only update if one of the averages changed
                             if old_v4_avg != new_v4_avg {
-                                println!("Average changed!");
-                                let mut min_laod = usize::MAX;
+                                println!("Average v4 changed!");
+                                let mut min_load = 1 as f64;
                                 let mut min_node = 0;
                                 for node in &nodes {
-                                    if node.1.get_avg_v4_load() < min_laod {
-                                        min_laod = node.1.get_avg_v4_load();
+                                    if node.1.get_avg_v4_load() < min_load {
+                                        min_load = node.1.get_avg_v4_load();
                                         min_node = *node.0;
                                     }
                                 }
-                                println!("New min node is {:?} ", min_node);
+                                println!("New min node for v4 is {:?} ", min_node);
                                 for node in &nodes {
                                     if node.0 == &min_node {
                                         if !node.1.get_v4_state() {
-                                            node.1.send_start();
+                                            node.1.send_start_v4();
                                         }
                                     } else {
-                                        //while !nodes.get(&min_node).unwrap().get_v4_state() {
-                                        //
-                                        //}
                                         if node.1.get_v4_state() && nodes.get(&min_node).unwrap().get_v4_state() {
                                             println!("Sending shutdown to node {:?}", node.0);
-                                            node.1.send_shutdown();
+                                            node.1.send_shutdown_v4();
                                         }
                                     }
                                 }
                             }
-                            if old_v6_avg != new_v6_avg {
-
-                            }
                         }
                     },
+                }
+                match v6_load {
+                    z => {
+                        if  true {
+                            if old_v6_avg != new_v6_avg {
+                                println!("Average v6 changed!");
+                                let mut min_load = 1 as f64;
+                                let mut min_node = 0;
+                                for node in &nodes {
+                                    if node.1.get_avg_v6_load() < min_load {
+                                        min_load = node.1.get_avg_v6_load();
+                                        min_node = *node.0;
+                                    }
+                                }
+                                println!("New min node for v6 is {:?} ", min_node);
+                                for node in &nodes {
+                                    if node.0 == &min_node {
+                                        if !node.1.get_v6_state() {
+                                            node.1.send_start_v6();
+                                        }
+                                    } else {
+                                        if node.1.get_v6_state(){
+                                            println!("Sending shutdown to node {:?}", node.0);
+                                            node.1.send_shutdown_v6();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
                 if ts.elapsed().unwrap().as_secs() >= 2 {
                     log(&nodes, &mut fp);
                     ts = SystemTime::now();
                 }
-                //println!("Node {:?} now has a total load of {:?}, with an v4 load of {:?} and a v6 load of {:?} ", buffer[1], buffer[2], buffer[3], buffer[4])
+                println!("Node {:?} now has a total load of {:?}, with an v4 load of {:?} and a v6 load of {:?} ", buffer[1], buffer[2], buffer[3], buffer[4])
             }
             _ => {}
         }

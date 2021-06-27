@@ -14,8 +14,8 @@ pub struct Node {
     ipv4: Ipv4Addr,
     ipv6: Ipv6Addr,
     total_loads: Vec<usize>,
-    v4_loads: LinkedList<usize>,
-    v6_loads: LinkedList<usize>,
+    v4_loads: LinkedList<f64>,
+    v6_loads: LinkedList<f64>,
     v4_state: bool,
     v6_state: bool,
 }
@@ -68,37 +68,73 @@ impl Node {
         self.v6_state = state;
     }
 
-    pub fn add_new_v4_load (&mut self, load: usize) {
+    pub fn add_new_v4_load (&mut self, load: f64) {
         self.v4_loads.push_back(load);
-        if self.v4_loads.len() > 100 {
+        if self.v4_loads.len() > 10 {
             self.v4_loads.pop_front();
         }
     }
 
-    pub fn get_avg_v4_load (&self) -> usize {
+    pub fn get_avg_v4_load (&self) -> f64 {
         if self.v4_loads.len() == 0 {
-            0
+            0 as f64
         } else {
-            self.v4_loads.iter().sum::<usize>() as usize / self.v4_loads.len() as usize
+            self.v4_loads.iter().sum::<f64>() as f64 / self.v4_loads.len() as f64
         }
     }
 
-    pub fn add_new_v6_load (&mut self, load: usize) {
+    pub fn add_new_v6_load (&mut self, load: f64) {
         self.v6_loads.push_back(load);
-        if self.v6_loads.len() > 100 {
+        if self.v6_loads.len() > 10 {
             self.v6_loads.pop_front();
         }
     }
 
-    pub fn get_avg_v6_load (&self) -> usize {
+    pub fn get_avg_v6_load (&self) -> f64 {
         if self.v6_loads.len() == 0 {
-            0
+            0 as f64
         } else {
-            self.v6_loads.iter().sum::<usize>() as usize / self.v6_loads.len() as usize
+            self.v6_loads.iter().sum::<f64>() as f64 / self.v6_loads.len() as f64
         }
     }
 
-    pub fn send_shutdown(&self) {
+    pub fn send_shutdown_v4(&self) {
+        let mut buf:Vec<u8> = Vec::with_capacity(5);
+        buf.push(3_u8);
+        buf.push(self.node_id);
+        buf.push(0_u8);
+        buf.push(1_u8);
+        self.quic_connection.send_to(&*buf,self.addr).unwrap();
+    }
+
+    pub fn send_start_v4(&self) {
+        let mut buf:Vec<u8> = Vec::with_capacity(5);
+        buf.push(3_u8);
+        buf.push(self.node_id);
+        buf.push(2_u8);
+        buf.push(1_u8);
+        self.quic_connection.send_to(&*buf,self.addr).unwrap();
+    }
+
+    pub fn send_shutdown_v6(&self) {
+        let mut buf:Vec<u8> = Vec::with_capacity(5);
+        buf.push(3_u8);
+        buf.push(self.node_id);
+        buf.push(1_u8);
+        buf.push(0_u8);
+        self.quic_connection.send_to(&*buf,self.addr).unwrap();
+    }
+
+    pub fn send_start_v6(&self) {
+        let mut buf:Vec<u8> = Vec::with_capacity(5);
+        buf.push(3_u8);
+        buf.push(self.node_id);
+        buf.push(1_u8);
+        buf.push(2_u8);
+        self.quic_connection.send_to(&*buf,self.addr).unwrap();
+    }
+
+    pub fn send_shutdown_both(&self) {
         let mut buf:Vec<u8> = Vec::with_capacity(5);
         buf.push(3_u8);
         buf.push(self.node_id);
@@ -107,12 +143,12 @@ impl Node {
         self.quic_connection.send_to(&*buf,self.addr).unwrap();
     }
 
-    pub fn send_start(&self) {
+    pub fn send_start_both(&self) {
         let mut buf:Vec<u8> = Vec::with_capacity(5);
         buf.push(3_u8);
         buf.push(self.node_id);
-        buf.push(1_u8);
-        buf.push(1_u8);
+        buf.push(2_u8);
+        buf.push(2_u8);
         self.quic_connection.send_to(&*buf,self.addr).unwrap();
     }
 }
