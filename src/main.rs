@@ -130,24 +130,30 @@ fn main() {
                             // Only update if one of the averages changed
                             if old_v4_avg != new_v4_avg {
                                 println!("Average v4 changed!");
-                                let mut min_load = 1 as f64;
-                                let mut min_node = 0;
+                                let mut max_load = 0 as f64;
+                                let mut max_node = 0;
                                 for node in &nodes {
-                                    if node.1.get_avg_v4_load() < min_load {
-                                        min_load = node.1.get_avg_v4_load();
-                                        min_node = *node.0;
+                                    if node.1.get_avg_v4_load() > max_load {
+                                        max_load = node.1.get_avg_v4_load();
+                                        max_node = *node.0;
                                     }
                                 }
-                                println!("New min node for v4 is {:?} ", min_node);
+                                println!("New max node for v4 is {:?} ", min_node);
+                                let mut active_node = false;
                                 for node in &nodes {
-                                    if node.0 == &min_node {
-                                        if !node.1.get_v4_state() {
-                                            node.1.send_start_v4();
+                                    if node.0 != &max_node && node.1.get_v4_state() {
+                                        active_node = true;
+                                    }
+                                }
+                                for node in &nodes {
+                                    if node.0 == &max_node {
+                                        if !node.1.get_v4_state() && active_node {
+                                            node.1.send_shutdown_v4();
                                         }
                                     } else {
-                                        if node.1.get_v4_state() && nodes.get(&min_node).unwrap().get_v4_state() {
-                                            println!("Sending shutdown to node {:?}", node.0);
-                                            node.1.send_shutdown_v4();
+                                        if !node.1.get_v4_state() {
+                                            println!("Sending start to node {:?}", node.0);
+                                            node.1.send_start_v4();
                                         }
                                     }
                                 }
