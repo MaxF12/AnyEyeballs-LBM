@@ -170,28 +170,34 @@ fn main() {
                         if  true {
                             if old_v6_avg != new_v6_avg {
                                 println!("Average v6 changed!");
-                                let mut min_load = 1 as f64;
-                                let mut min_node = 0;
+                                let mut max_load = 0 as f64;
+                                let mut max_node = 0;
                                 for node in &nodes {
-                                    if node.1.get_avg_v6_load() < min_load {
-                                        min_load = node.1.get_avg_v6_load();
-                                        min_node = *node.0;
+                                    if node.1.get_avg_v6_load() < max_load {
+                                        max_load = node.1.get_avg_v6_load();
+                                        max_node = *node.0;
                                     }
                                 }
-                                println!("New min node for v6 is {:?} ", min_node);
+                                println!("New max node for v6 is {:?} ", max_node);
+                                let mut active_node = false;
                                 for node in &nodes {
-                                    if node.0 == &min_node {
-                                        if !node.1.get_v6_state() {
-                                            node.1.send_start_v6();
-                                        }
-                                    } else {
-                                        if node.1.get_v6_state(){
-                                            println!("Sending shutdown to node {:?}", node.0);
+                                    if node.0 != &max_node && node.1.get_v6_state() {
+                                        active_node = true;
+                                    }
+                                }
+                                for node in &nodes {
+                                    if node.0 == &max_node {
+                                        if !node.1.get_v6_state() && active_node {
                                             node.1.send_shutdown_v6();
-                                            // If we are over 80% capacity shut down v4 as well
-                                            if v6_load as f64 >= capacity as f64 *0.8 {
+                                            // If we are over 80% capacity shut down v6 as well
+                                            if v4_load as f64 >= capacity as f64 *0.8 {
                                                 node.1.send_shutdown_v4();
                                             }
+                                        }
+                                    } else {
+                                        if !node.1.get_v6_state() {
+                                            println!("Sending start to node {:?}", node.0);
+                                            node.1.send_start_v6();
                                         }
                                     }
                                 }
