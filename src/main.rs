@@ -174,7 +174,7 @@ fn main() {
                                 let mut max_load = 0 as f64;
                                 let mut max_node = 0;
                                 for node in &nodes {
-                                    if node.1.get_avg_v6_load() < max_load {
+                                    if node.1.get_avg_v6_load() > max_load {
                                         max_load = node.1.get_avg_v6_load();
                                         max_node = *node.0;
                                     }
