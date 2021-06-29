@@ -7,7 +7,7 @@ use std::path::Path;
 use std::fs::File;
 //use quiche::Connection;
 
-const ORCH_ADDR: &str = "127.0.0.1:7722";
+const ORCH_ADDR: &str = "172.31.32.238:7722";
 const MAX_NODES: u8 = 64;
 
 fn main() {
