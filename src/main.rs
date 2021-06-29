@@ -138,7 +138,7 @@ fn main() {
                                         max_node = *node.0;
                                     }
                                 }
-                                println!("New max node for v4 is {:?} ", min_node);
+                                println!("New max node for v4 is {:?} ", max_node);
                                 let mut active_node = false;
                                 for node in &nodes {
                                     if node.0 != &max_node && node.1.get_v4_state() {
@@ -149,6 +149,10 @@ fn main() {
                                     if node.0 == &max_node {
                                         if !node.1.get_v4_state() && active_node {
                                             node.1.send_shutdown_v4();
+                                            // If we are over 80% capacity shut down v6 as well
+                                            if v4_load as f64 >= capacity as f64 *0.8 {
+                                                node.1.send_shutdown_v6();
+                                            }
                                         }
                                     } else {
                                         if !node.1.get_v4_state() {
@@ -184,6 +188,10 @@ fn main() {
                                         if node.1.get_v6_state(){
                                             println!("Sending shutdown to node {:?}", node.0);
                                             node.1.send_shutdown_v6();
+                                            // If we are over 80% capacity shut down v4 as well
+                                            if v6_load as f64 >= capacity as f64 *0.8 {
+                                                node.1.send_shutdown_v4();
+                                            }
                                         }
                                     }
                                 }
