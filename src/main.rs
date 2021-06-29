@@ -143,6 +143,7 @@ fn main() {
                                 for node in &nodes {
                                     if node.0 != &max_node && node.1.get_v4_state() {
                                         active_node = true;
+                                        println!("Another node is active!");
                                     }
                                 }
                                 for node in &nodes {
@@ -183,6 +184,7 @@ fn main() {
                                 let mut active_node = false;
                                 for node in &nodes {
                                     if node.0 != &max_node && node.1.get_v6_state() {
+                                        println!("Another node is active!");
                                         active_node = true;
                                     }
                                 }
