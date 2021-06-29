@@ -151,6 +151,7 @@ fn main() {
                                             node.1.send_shutdown_v4();
                                             // If we are over 80% capacity shut down v6 as well
                                             if v4_load as f64 >= capacity as f64 *0.8 {
+                                                println!("Sending shutdown for v4!");
                                                 node.1.send_shutdown_v6();
                                             }
                                         }
@@ -191,6 +192,7 @@ fn main() {
                                             node.1.send_shutdown_v6();
                                             // If we are over 80% capacity shut down v6 as well
                                             if v4_load as f64 >= capacity as f64 *0.8 {
+                                                println!("Sending shutdown for v6!");
                                                 node.1.send_shutdown_v4();
                                             }
                                         }
