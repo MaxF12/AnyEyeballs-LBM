@@ -143,12 +143,11 @@ fn main() {
                                 for node in &nodes {
                                     if node.0 != &max_node && node.1.get_v4_state() {
                                         active_node = true;
-                                        println!("Another node is active!");
                                     }
                                 }
                                 for node in &nodes {
                                     if node.0 == &max_node {
-                                        if !node.1.get_v4_state() && active_node {
+                                        if node.1.get_v4_state() && active_node {
                                             node.1.send_shutdown_v4();
                                             println!("Sending shutdown for v4!");
                                             // If we are over 80% capacity shut down v6 as well
@@ -184,13 +183,12 @@ fn main() {
                                 let mut active_node = false;
                                 for node in &nodes {
                                     if node.0 != &max_node && node.1.get_v6_state() {
-                                        println!("Another node is active!");
                                         active_node = true;
                                     }
                                 }
                                 for node in &nodes {
                                     if node.0 == &max_node {
-                                        if !node.1.get_v6_state() && active_node {
+                                        if node.1.get_v6_state() && active_node {
                                             node.1.send_shutdown_v6();
                                             println!("Sending shutdown for v6!");
                                             // If we are over 80% capacity shut down v6 as well
