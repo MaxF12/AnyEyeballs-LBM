@@ -1,17 +1,18 @@
 use std::net::{UdpSocket, Ipv4Addr, Ipv6Addr};
 use anyeyeballs_orchestrator::{Node, send_error, log};
-use std::collections::{HashMap, HashSet};
-use std::time;
+use std::collections::{HashMap};
 use std::time::SystemTime;
 use std::path::Path;
 use std::fs::File;
-//use quiche::Connection;
 
 const ORCH_ADDR: &str = "172.31.32.238:7722";
 const MAX_NODES: u8 = 64;
+const LOAD_THRESHOLD: f64 = 0.5;
+const LOG_FILE: &str = "log.txt";
+const LOG_INTERVAL: u64 = 2;
 
 fn main() {
-    let log_path = Path::new("log.txt");
+    let log_path = Path::new(LOG_FILE);
     let mut fp = match File::create(&log_path) {
         Err(err) => panic!("Unable to create log file: {}", err),
         Ok(fp) => fp,
@@ -127,38 +128,40 @@ fn main() {
                         };
                         // round-robin
                         if  true {
-                            // Only update if one of the averages changed
-                            if old_v4_avg != new_v4_avg {
-                                println!("Average v4 changed!");
-                                let mut max_load = 0 as f64;
-                                let mut max_node = 0;
-                                for node in &nodes {
-                                    if node.1.get_avg_v4_load() > max_load {
-                                        max_load = node.1.get_avg_v4_load();
-                                        max_node = *node.0;
-                                    }
-                                }
-                                println!("New max node for v4 is {:?} ", max_node);
-                                let mut active_node = false;
-                                for node in &nodes {
-                                    if node.0 != &max_node && node.1.get_v4_state() {
-                                        active_node = true;
-                                    }
-                                }
-                                for node in &nodes {
-                                    if node.0 == &max_node {
-                                        if node.1.get_v4_state() && active_node {
-                                            node.1.send_shutdown_v4();
-                                            println!("Sending shutdown for v4!");
-                                            // If we are over 80% capacity shut down v6 as well
-                                            if v4_load as f64 >= capacity as f64 *0.8 {
-                                                node.1.send_shutdown_v6();
-                                            }
+                            if new_v4_avg >= LOAD_THRESHOLD {
+                                // Only update if one of the averages changed
+                                if old_v4_avg != new_v4_avg {
+                                    println!("Average v4 changed!");
+                                    let mut max_load = 0 as f64;
+                                    let mut max_node = 0;
+                                    for node in &nodes {
+                                        if node.1.get_avg_v4_load() > max_load {
+                                            max_load = node.1.get_avg_v4_load();
+                                            max_node = *node.0;
                                         }
-                                    } else {
-                                        if !node.1.get_v4_state() {
-                                            println!("Sending start to node {:?}", node.0);
-                                            node.1.send_start_v4();
+                                    }
+                                    println!("New max node for v4 is {:?} ", max_node);
+                                    let mut active_node = false;
+                                    for node in &nodes {
+                                        if node.0 != &max_node && node.1.get_v4_state() {
+                                            active_node = true;
+                                        }
+                                    }
+                                    for node in &nodes {
+                                        if node.0 == &max_node {
+                                            if node.1.get_v4_state() && active_node {
+                                                node.1.send_shutdown_v4();
+                                                println!("Sending shutdown for v4!");
+                                                // If we are over 80% capacity shut down v6 as well
+                                                if v4_load as f64 >= capacity as f64 * 0.8 {
+                                                    node.1.send_shutdown_v6();
+                                                }
+                                            }
+                                        } else {
+                                            if !node.1.get_v4_state() {
+                                                println!("Sending start to node {:?}", node.0);
+                                                node.1.send_start_v4();
+                                            }
                                         }
                                     }
                                 }
@@ -167,39 +170,41 @@ fn main() {
                     },
                 }
                 match v6_load {
-                    z => {
+                    _ => {
                         if  true {
-                            if old_v6_avg != new_v6_avg {
-                                println!("Average v6 changed!");
-                                let mut max_load = 0 as f64;
-                                let mut max_node = 0;
-                                for node in &nodes {
-                                    if node.1.get_avg_v6_load() > max_load {
-                                        max_load = node.1.get_avg_v6_load();
-                                        max_node = *node.0;
-                                    }
-                                }
-                                println!("New max node for v6 is {:?} ", max_node);
-                                let mut active_node = false;
-                                for node in &nodes {
-                                    if node.0 != &max_node && node.1.get_v6_state() {
-                                        active_node = true;
-                                    }
-                                }
-                                for node in &nodes {
-                                    if node.0 == &max_node {
-                                        if node.1.get_v6_state() && active_node {
-                                            node.1.send_shutdown_v6();
-                                            println!("Sending shutdown for v6!");
-                                            // If we are over 80% capacity shut down v6 as well
-                                            if v4_load as f64 >= capacity as f64 *0.8 {
-                                                node.1.send_shutdown_v4();
-                                            }
+                            if new_v6_avg >= LOAD_THRESHOLD {
+                                if old_v6_avg != new_v6_avg {
+                                    println!("Average v6 changed!");
+                                    let mut max_load = 0 as f64;
+                                    let mut max_node = 0;
+                                    for node in &nodes {
+                                        if node.1.get_avg_v6_load() > max_load {
+                                            max_load = node.1.get_avg_v6_load();
+                                            max_node = *node.0;
                                         }
-                                    } else {
-                                        if !node.1.get_v6_state() {
-                                            println!("Sending start to node {:?}", node.0);
-                                            node.1.send_start_v6();
+                                    }
+                                    println!("New max node for v6 is {:?} ", max_node);
+                                    let mut active_node = false;
+                                    for node in &nodes {
+                                        if node.0 != &max_node && node.1.get_v6_state() {
+                                            active_node = true;
+                                        }
+                                    }
+                                    for node in &nodes {
+                                        if node.0 == &max_node {
+                                            if node.1.get_v6_state() && active_node {
+                                                node.1.send_shutdown_v6();
+                                                println!("Sending shutdown for v6!");
+                                                // If we are over 80% capacity shut down v6 as well
+                                                if v4_load as f64 >= capacity as f64 * 0.8 {
+                                                    node.1.send_shutdown_v4();
+                                                }
+                                            }
+                                        } else {
+                                            if !node.1.get_v6_state() {
+                                                println!("Sending start to node {:?}", node.0);
+                                                node.1.send_start_v6();
+                                            }
                                         }
                                     }
                                 }
@@ -207,7 +212,7 @@ fn main() {
                         }
                     }
                 }
-                if ts.elapsed().unwrap().as_secs() >= 2 {
+                if ts.elapsed().unwrap().as_secs() >= LOG_INTERVAL {
                     log(&nodes, &mut fp);
                     ts = SystemTime::now();
                 }

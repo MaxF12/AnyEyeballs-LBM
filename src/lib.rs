@@ -2,13 +2,12 @@
 use std::net::{Ipv4Addr, Ipv6Addr, UdpSocket, SocketAddr};
 use core::fmt;
 use std::collections::{LinkedList, HashMap};
-use std::time;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::fs::File;
 use std::io::Write;
 
 pub struct Node {
-    quic_connection: UdpSocket,
+    udp_connection: UdpSocket,
     addr: SocketAddr,
     node_id: u8,
     ipv4: Ipv4Addr,
@@ -21,9 +20,9 @@ pub struct Node {
 }
 
 impl Node {
-    pub fn new(quic_connection: UdpSocket,addr: SocketAddr ,node_id: u8, ipv4: Ipv4Addr, ipv6: Ipv6Addr) -> Node {
+    pub fn new(udp_connection: UdpSocket,addr: SocketAddr ,node_id: u8, ipv4: Ipv4Addr, ipv6: Ipv6Addr) -> Node {
         Node{
-            quic_connection,
+            udp_connection,
             addr,
             node_id,
             ipv4,
@@ -41,7 +40,7 @@ impl Node {
         // Flag 000 for join
         buf.push(4_u8);
         buf.push(self.node_id);
-        self.quic_connection.send_to(&*buf,self.addr).unwrap();
+        self.udp_connection.send_to(&*buf, self.addr).unwrap();
     }
 
     pub fn get_v4_addr (&self) -> Ipv4Addr {
@@ -104,7 +103,7 @@ impl Node {
         buf.push(self.node_id);
         buf.push(0_u8);
         buf.push(1_u8);
-        self.quic_connection.send_to(&*buf,self.addr).unwrap();
+        self.udp_connection.send_to(&*buf, self.addr).unwrap();
     }
 
     pub fn send_start_v4(&self) {
@@ -113,7 +112,7 @@ impl Node {
         buf.push(self.node_id);
         buf.push(2_u8);
         buf.push(1_u8);
-        self.quic_connection.send_to(&*buf,self.addr).unwrap();
+        self.udp_connection.send_to(&*buf, self.addr).unwrap();
     }
 
     pub fn send_shutdown_v6(&self) {
@@ -122,7 +121,7 @@ impl Node {
         buf.push(self.node_id);
         buf.push(1_u8);
         buf.push(0_u8);
-        self.quic_connection.send_to(&*buf,self.addr).unwrap();
+        self.udp_connection.send_to(&*buf, self.addr).unwrap();
     }
 
     pub fn send_start_v6(&self) {
@@ -131,7 +130,7 @@ impl Node {
         buf.push(self.node_id);
         buf.push(1_u8);
         buf.push(2_u8);
-        self.quic_connection.send_to(&*buf,self.addr).unwrap();
+        self.udp_connection.send_to(&*buf, self.addr).unwrap();
     }
 
     pub fn send_shutdown_both(&self) {
@@ -140,7 +139,7 @@ impl Node {
         buf.push(self.node_id);
         buf.push(0_u8);
         buf.push(0_u8);
-        self.quic_connection.send_to(&*buf,self.addr).unwrap();
+        self.udp_connection.send_to(&*buf, self.addr).unwrap();
     }
 
     pub fn send_start_both(&self) {
@@ -149,7 +148,7 @@ impl Node {
         buf.push(self.node_id);
         buf.push(2_u8);
         buf.push(2_u8);
-        self.quic_connection.send_to(&*buf,self.addr).unwrap();
+        self.udp_connection.send_to(&*buf, self.addr).unwrap();
     }
 }
 
@@ -176,5 +175,5 @@ pub fn log(nodes: &HashMap<u8,Node>, fp: &mut File) {
         new_log = new_log+",{"+&node.0.to_string()+","+&node.1.v4_loads.back().unwrap().to_string()+","+&node.1.v6_loads.back().unwrap().to_string()+"}";
     }
     new_log = new_log + "}\n";
-    fp.write(new_log.as_bytes());
+    fp.write(new_log.as_bytes()).unwrap();
 }
