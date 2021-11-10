@@ -5,7 +5,7 @@ use std::time::SystemTime;
 use std::path::Path;
 use std::fs::File;
 
-const ORCH_ADDR: &str = "172.31.32.238:7722";
+const ORCH_ADDR: &str = "127.0.0.1:7722";
 const MAX_NODES: u8 = 64;
 const LOAD_THRESHOLD: f64 = 0.5;
 const LOG_FILE: &str = "log.txt";

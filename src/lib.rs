@@ -69,7 +69,7 @@ impl Node {
 
     pub fn add_new_v4_load (&mut self, load: f64) {
         self.v4_loads.push_back(load);
-        if self.v4_loads.len() > 10 {
+        if self.v4_loads.len() > 1 {
             self.v4_loads.pop_front();
         }
     }
@@ -84,7 +84,7 @@ impl Node {
 
     pub fn add_new_v6_load (&mut self, load: f64) {
         self.v6_loads.push_back(load);
-        if self.v6_loads.len() > 10 {
+        if self.v6_loads.len() > 1 {
             self.v6_loads.pop_front();
         }
     }
