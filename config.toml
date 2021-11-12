@@ -1,0 +1,13 @@
+[orchestrator]
+ip = "127.0.0.1"
+port = "7722"
+max_nodes = 64
+
+[log]
+file = "log.txt"
+interval = 2
+
+[balancer]
+load_threshold = 0.5
+relative_threshold = 0.8
+mode = 1

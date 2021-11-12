@@ -6,13 +6,39 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use std::fs::File;
 use std::io::Write;
 
+pub struct Config {
+    pub orch_addr: String,
+    pub max_nodes: u8,
+    pub load_threshold: f64,
+    pub relv_threshold: f64,
+    pub log_file: String,
+    pub log_interval: u64,
+    pub lb_mode: u8,
+}
+
+impl Config {
+    pub fn new(config: String) -> Config{
+        let conf: toml::Value = toml::from_str(&*config).unwrap();
+        let addr = format!("{}:{}", conf["orchestrator"]["ip"].as_str().unwrap(), conf["orchestrator"]["port"].as_str().unwrap());
+        Config{
+            orch_addr: addr,
+            max_nodes: conf["orchestrator"]["max_nodes"].as_integer().unwrap() as u8,
+            load_threshold:conf["balancer"]["load_threshold"].as_float().unwrap(),
+            relv_threshold: conf["balancer"]["relative_threshold"].as_float().unwrap(),
+            log_file: conf["log"]["file"].as_str().unwrap().parse().unwrap(),
+            log_interval: conf["log"]["interval"].as_integer().unwrap() as u64,
+            lb_mode: conf["balancer"]["mode"].as_integer().unwrap() as u8
+        }
+    }
+}
+
 pub struct Node {
     udp_connection: UdpSocket,
     addr: SocketAddr,
     node_id: u8,
     ipv4: Ipv4Addr,
     ipv6: Ipv6Addr,
-    total_loads: Vec<usize>,
+    total_loads: LinkedList<f64>,
     v4_loads: LinkedList<f64>,
     v6_loads: LinkedList<f64>,
     v4_state: bool,
@@ -27,7 +53,7 @@ impl Node {
             node_id,
             ipv4,
             ipv6,
-            total_loads: vec![],
+            total_loads: LinkedList::new(),
             v4_loads: LinkedList::new(),
             v6_loads: LinkedList::new(),
             v4_state: true,
@@ -65,6 +91,22 @@ impl Node {
 
     pub fn set_v6_state (&mut self, state: bool) {
         self.v6_state = state;
+    }
+
+
+    pub fn add_new_total_load (&mut self, load: f64) {
+        self.total_loads.push_back(load);
+        if self.total_loads.len() > 1 {
+            self.total_loads.pop_front();
+        }
+    }
+
+    pub fn get_avg_total_load (&self) -> f64 {
+        if self.total_loads.len() == 0 {
+            0 as f64
+        } else {
+            self.total_loads.iter().sum::<f64>() as f64 / self.total_loads.len() as f64
+        }
     }
 
     pub fn add_new_v4_load (&mut self, load: f64) {
@@ -149,6 +191,17 @@ impl Node {
         buf.push(2_u8);
         buf.push(2_u8);
         self.udp_connection.send_to(&*buf, self.addr).unwrap();
+    }
+
+    pub fn check_rel_loads_and_shutdown(&self, thresh: f64) {
+        if self.get_avg_v4_load() > thresh {
+            self.send_shutdown_v4();
+        } else if self.get_avg_v6_load() > thresh {
+            self.send_shutdown_v6();
+        } else {
+        // Otherwise shut off both
+            self.send_shutdown_both();
+        }
     }
 }
 
