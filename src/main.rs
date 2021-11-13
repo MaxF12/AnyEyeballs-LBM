@@ -88,14 +88,14 @@ fn main() {
 
                 if v4_load > 1 as f64 {
                     node.set_v4_state(false);
-                    node.add_new_v4_load(100 as f64);
+                    //node.add_new_v4_load(100 as f64);
                 } else {
                     node.set_v4_state(true);
                     node.add_new_v4_load(v4_load);
                 }
                 if v6_load > 1 as f64 {
                     node.set_v6_state(false);
-                    node.add_new_v6_load(100 as f64);
+                    //node.add_new_v6_load(100 as f64);
                 } else {
                     node.set_v6_state(true);
                     node.add_new_v6_load(v6_load);
