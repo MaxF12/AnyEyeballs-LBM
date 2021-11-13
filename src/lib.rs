@@ -61,7 +61,10 @@ impl Node {
         }
     }
 
-    pub fn ok_join (&self) {
+    pub fn ok_join (&mut self) {
+        self.v4_loads.push_back(0 as f64);
+        self.v6_loads.push_back(0 as f64);
+        self.total_loads.push_back(0 as f64);
         let mut buf:Vec<u8> = Vec::with_capacity(2);
         // Flag 000 for join
         buf.push(4_u8);
@@ -225,7 +228,7 @@ pub fn log(nodes: &HashMap<u8,Node>, fp: &mut File) {
     let ts = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
     let mut new_log = "{".to_owned()+ &ts.to_string();
     for node in nodes {
-        new_log = new_log+",{"+&node.0.to_string()+","+&node.1.v4_loads.back().unwrap().to_string()+","+&node.1.v6_loads.back().unwrap().to_string()+"}";
+        new_log = new_log+",{"+&node.0.to_string()+","+&node.1.total_loads.back().unwrap().to_string()+","+&node.1.v4_loads.back().unwrap().to_string()+","+&node.1.v6_loads.back().unwrap().to_string()+"}";
     }
     new_log = new_log + "}\n";
     fp.write(new_log.as_bytes()).unwrap();

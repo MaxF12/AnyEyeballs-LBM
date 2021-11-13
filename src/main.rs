@@ -9,6 +9,7 @@ use std::io::Read;
 
 fn main() {
 
+    // Load config
     let mut config = String::new();
     File::open(&env::args().nth(1).unwrap())
         .and_then(|mut f| f.read_to_string(&mut config))
@@ -16,24 +17,29 @@ fn main() {
 
     let config = Config::new(config);
 
+    // Create log file
     let log_path = Path::new(&config.log_file);
     let mut fp = match File::create(&log_path) {
         Err(err) => panic!("Unable to create log file: {}", err),
         Ok(fp) => fp,
     };
+    // Create empty hashmap for nodes
     let mut nodes = HashMap::new();
+    // Create and bind UDP socket to listen for incoming nodes messages
     let socket = match UdpSocket::bind(config.orch_addr) {
         Err(err) => panic!("Unable to bind Orchestrator Socket: {}", err),
         Ok(socket) => socket,
     };
+    // Create hash maps for IPv4 and IPv6 addresses
     let mut v4_boxes = HashMap::new();
     let mut v6_boxes = HashMap::new();
 
+    // Create buffer to read incoming messages
     let mut buffer = [0; 512];
     let mut ts = SystemTime::now();
     loop {
+        // Clone the socket so we can handle multiple incoming packets at once
         let sock = socket.try_clone().unwrap();
-        //println!("Orchestrator waiting for message");
         let (_num_bytes, addr) = sock.recv_from(&mut buffer).unwrap();
         match &buffer[0] {
             // New join
@@ -52,7 +58,7 @@ fn main() {
                     // Send error back
                     send_error(sock,addr, 0_u8);
                 } else {
-                    let new_node = Node::new(sock, addr, node_id, Ipv4Addr::new(buffer[1], buffer[2], buffer[3], buffer[4]), Ipv6Addr::from([buffer[5], buffer[6], buffer[7], buffer[8], buffer[9], buffer[10], buffer[11], buffer[12], buffer[13], buffer[14], buffer[15], buffer[16], buffer[17], buffer[18], buffer[19], buffer[20]]));
+                    let mut new_node = Node::new(sock, addr, node_id, Ipv4Addr::new(buffer[1], buffer[2], buffer[3], buffer[4]), Ipv6Addr::from([buffer[5], buffer[6], buffer[7], buffer[8], buffer[9], buffer[10], buffer[11], buffer[12], buffer[13], buffer[14], buffer[15], buffer[16], buffer[17], buffer[18], buffer[19], buffer[20]]));
                     new_node.ok_join();
                     if !v4_boxes.contains_key(&new_node.get_v4_addr()) {
                         v4_boxes.insert(new_node.get_v4_addr(), 0);
