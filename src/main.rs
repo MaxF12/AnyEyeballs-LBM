@@ -126,23 +126,23 @@ fn main() {
                                 }
                             }
                             if other_addr_free {
-                                if node.get_v4_state() && node.get_v6_state() {
+                                if node.get_v4_state() || node.get_v6_state() {
                                     // Both interfaces are enabled
-                                    if node.get_v4_state() || node.get_v6_state() {
+                                    if node.get_v4_state() && node.get_v6_state() {
                                         node.check_rel_loads_and_shutdown(config.relv_threshold);
                                     } else if node.get_v6_state() {
                                         node.send_shutdown_v6();
                                     } else {
                                         node.send_shutdown_v4();
                                     }
-                                } else {
-                                    if !node.get_v6_state() {
-                                        node.send_start_v6();
-                                    }
-                                    if !node.get_v4_state() {
-                                        node.send_start_v4();
-                                    }
                                 }
+                            }
+                        } else {
+                            if !node.get_v6_state() {
+                                node.send_start_v6();
+                            }
+                            if !node.get_v4_state() {
+                                node.send_start_v4();
                             }
                         }
                         // Round Robin
