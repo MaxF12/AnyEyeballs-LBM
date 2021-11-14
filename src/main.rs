@@ -114,14 +114,14 @@ fn main() {
                             // Node has at least one interfaces enabled
                             // Check if there are other addresses available
                             let mut other_addr_free = false;
-                            for value in &v4_boxes {
-                                if value.0 != &nodes.get(value.1).unwrap().get_v4_addr() && nodes.get(value.1).unwrap().get_v4_state() {
+                            // Make sure another node is still active before shutting this one down
+                            // Mostly relevant in cases where the interface cant be reused quickly enough after a switch
+                            for node in &nodes {
+                                if node.0 != &node_id && node.1.get_v4_state() {
                                     other_addr_free = true;
                                     break;
                                 }
-                            }
-                            for value in &v6_boxes {
-                                if value.0 != &nodes.get(value.1).unwrap().get_v6_addr()  &&  nodes.get(value.1).unwrap().get_v6_state() {
+                                if node.0 != &node_id && node.1.get_v6_state() {
                                     other_addr_free = true;
                                     break;
                                 }
