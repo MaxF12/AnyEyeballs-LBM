@@ -126,7 +126,7 @@ fn main() {
                                 }
                             }
                             if other_addr_free {
-                                if node.get_v4_state() || node.get_v6_state() {
+                                if node.get_v4_state() && node.get_v6_state() {
                                     // Both interfaces are enabled
                                     if node.get_v4_state() || node.get_v6_state() {
                                         node.check_rel_loads_and_shutdown(config.relv_threshold);
@@ -175,14 +175,6 @@ fn main() {
                                 if node.0 == &max_node {
                                     if active_node {
                                         node.1.check_rel_loads_and_shutdown(config.relv_threshold);
-                                    }
-                                    if node.1.get_v4_state() && active_node {
-                                        node.1.send_shutdown_v4();
-                                        println!("Sending shutdown for v4!");
-                                        // If we are over 80% capacity shut down v6 as well
-                                        if v4_load >= 0.8 {
-                                            node.1.send_shutdown_v6();
-                                        }
                                     }
                                 } else {
                                     if !node.1.get_v4_state() {
