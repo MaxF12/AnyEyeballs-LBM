@@ -206,6 +206,7 @@ impl Node {
             self.send_shutdown_v6();
         } else {
         // Otherwise shut off both
+            println!("Shutting down both interfaces");
             self.send_shutdown_both();
         }
     }
