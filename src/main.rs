@@ -111,22 +111,22 @@ fn main() {
                         if total_load >= config.load_threshold {
                             println!("Passed threshold!");
                             // Node has at least one interfaces enabled
-                            if node.get_v4_state() || node.get_v6_state() {
-                                // Check if there are other addresses available
-                                let mut other_addr_free = false;
-                                for value in &v4_boxes {
-                                    if value.0 != &node.get_v4_addr() && value.1 == &0 {
-                                        other_addr_free = true;
-                                        break;
-                                    }
+                            // Check if there are other addresses available
+                            let mut other_addr_free = false;
+                            for value in &v4_boxes {
+                                if value.0 != &node.get_v4_addr() && value.1 == &0 {
+                                    other_addr_free = true;
+                                    break;
                                 }
-                                for value in &v6_boxes {
-                                    if value.0 != &node.get_v6_addr() && value.1 == &0 {
-                                        other_addr_free = true;
-                                        break;
-                                    }
+                            }
+                            for value in &v6_boxes {
+                                if value.0 != &node.get_v6_addr() && value.1 == &0 {
+                                    other_addr_free = true;
+                                    break;
                                 }
-                                if other_addr_free {
+                            }
+                            if other_addr_free {
+                                if node.get_v4_state() || node.get_v6_state() {
                                     // Both interfaces are enabled
                                     if node.get_v4_state() || node.get_v6_state() {
                                         node.check_rel_loads_and_shutdown(config.relv_threshold);
@@ -136,13 +136,13 @@ fn main() {
                                         node.send_shutdown_v4();
                                     }
                                 }
-                            }
-                        } else {
-                            if !node.get_v6_state() {
-                                node.send_start_v6();
-                            }
-                            if !node.get_v4_state() {
-                                node.send_start_v4();
+                            } else {
+                                if !node.get_v6_state() {
+                                    node.send_start_v6();
+                                }
+                                if !node.get_v4_state() {
+                                    node.send_start_v4();
+                                }
                             }
                         }
                         // Round Robin
