@@ -147,50 +147,52 @@ fn main() {
                         }
                         // Round Robin
                     } else if config.lb_mode == 1 {
-                        // Find node with maxiumum load
-                        let mut max_load = 0 as f64;
-                        let mut max_node = 0;
-                        for node in &nodes {
-                            if node.1.get_avg_total_load() > max_load {
-                                max_load = node.1.get_avg_total_load();
-                                max_node = *node.0;
-                            }
-                        }
-                        println!("New max node is {:?} ", max_node);
-                        let mut active_node = false;
-                        // Make sure another node is still active before shutting this one down
-                        // Mostly relevant in cases where the interface cant be reused quickly enough after a switch
-                        for node in &nodes {
-                            if node.0 != &max_node && node.1.get_v4_state() {
-                                active_node = true;
-                                break;
-                            }
-                            if node.0 != &max_node && node.1.get_v6_state() {
-                                active_node = true;
-                                break;
-                            }
-                        }
-                        for node in &nodes {
-                            if node.0 == &max_node {
-                                if active_node {
-                                    node.1.check_rel_loads_and_shutdown(config.relv_threshold);
+                        if new_avg > config.load_threshold {
+                            // Find node with maxiumum load
+                            let mut max_load = 0 as f64;
+                            let mut max_node = 0;
+                            for node in &nodes {
+                                if node.1.get_avg_total_load() > max_load {
+                                    max_load = node.1.get_avg_total_load();
+                                    max_node = *node.0;
                                 }
-                                if node.1.get_v4_state() && active_node {
-                                    node.1.send_shutdown_v4();
-                                    println!("Sending shutdown for v4!");
-                                    // If we are over 80% capacity shut down v6 as well
-                                    if v4_load >= 0.8 {
-                                        node.1.send_shutdown_v6();
+                            }
+                            println!("New max node is {:?} ", max_node);
+                            let mut active_node = false;
+                            // Make sure another node is still active before shutting this one down
+                            // Mostly relevant in cases where the interface cant be reused quickly enough after a switch
+                            for node in &nodes {
+                                if node.0 != &max_node && node.1.get_v4_state() {
+                                    active_node = true;
+                                    break;
+                                }
+                                if node.0 != &max_node && node.1.get_v6_state() {
+                                    active_node = true;
+                                    break;
+                                }
+                            }
+                            for node in &nodes {
+                                if node.0 == &max_node {
+                                    if active_node {
+                                        node.1.check_rel_loads_and_shutdown(config.relv_threshold);
                                     }
-                                }
-                            } else {
-                                if !node.1.get_v4_state() {
-                                    println!("Sending start to v4 node {:?}", node.0);
-                                    node.1.send_start_v4();
-                                }
-                                if !node.1.get_v6_state() {
-                                    println!("Sending start to v6 node {:?}", node.0);
-                                    node.1.send_start_v6();
+                                    if node.1.get_v4_state() && active_node {
+                                        node.1.send_shutdown_v4();
+                                        println!("Sending shutdown for v4!");
+                                        // If we are over 80% capacity shut down v6 as well
+                                        if v4_load >= 0.8 {
+                                            node.1.send_shutdown_v6();
+                                        }
+                                    }
+                                } else {
+                                    if !node.1.get_v4_state() {
+                                        println!("Sending start to v4 node {:?}", node.0);
+                                        node.1.send_start_v4();
+                                    }
+                                    if !node.1.get_v6_state() {
+                                        println!("Sending start to v6 node {:?}", node.0);
+                                        node.1.send_start_v6();
+                                    }
                                 }
                             }
                         }
