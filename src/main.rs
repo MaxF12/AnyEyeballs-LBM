@@ -135,13 +135,13 @@ fn main() {
                                     } else {
                                         node.send_shutdown_v4();
                                     }
-                                }
-                            } else {
-                                if !node.get_v6_state() {
-                                    node.send_start_v6();
-                                }
-                                if !node.get_v4_state() {
-                                    node.send_start_v4();
+                                } else {
+                                    if !node.get_v6_state() {
+                                        node.send_start_v6();
+                                    }
+                                    if !node.get_v4_state() {
+                                        node.send_start_v4();
+                                    }
                                 }
                             }
                         }
