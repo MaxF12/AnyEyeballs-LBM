@@ -179,13 +179,15 @@ fn main() {
                                         node.1.check_rel_loads_and_shutdown(config.relv_threshold);
                                     }
                                 } else {
-                                    if !node.1.get_v4_state() {
-                                        println!("Sending start to v4 node {:?}", node.0);
-                                        node.1.send_start_v4();
-                                    }
-                                    if !node.1.get_v6_state() {
-                                        println!("Sending start to v6 node {:?}", node.0);
-                                        node.1.send_start_v6();
+                                    if node.1.get_avg_total_load() < config.load_threshold {
+                                        if !node.1.get_v4_state() {
+                                            println!("Sending start to v4 node {:?}", node.0);
+                                            node.1.send_start_v4();
+                                        }
+                                        if !node.1.get_v6_state() {
+                                            println!("Sending start to v6 node {:?}", node.0);
+                                            node.1.send_start_v6();
+                                        }
                                     }
                                 }
                             }
