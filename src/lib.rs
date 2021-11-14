@@ -96,6 +96,9 @@ impl Node {
         self.v6_state = state;
     }
 
+    pub fn get_node_id (&self) -> u8 {
+        self.node_id
+    }
 
     pub fn add_new_total_load (&mut self, load: f64) {
         self.total_loads.push_back(load);

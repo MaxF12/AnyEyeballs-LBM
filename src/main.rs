@@ -61,10 +61,10 @@ fn main() {
                     let mut new_node = Node::new(sock, addr, node_id, Ipv4Addr::new(buffer[1], buffer[2], buffer[3], buffer[4]), Ipv6Addr::from([buffer[5], buffer[6], buffer[7], buffer[8], buffer[9], buffer[10], buffer[11], buffer[12], buffer[13], buffer[14], buffer[15], buffer[16], buffer[17], buffer[18], buffer[19], buffer[20]]));
                     new_node.ok_join();
                     if !v4_boxes.contains_key(&new_node.get_v4_addr()) {
-                        v4_boxes.insert(new_node.get_v4_addr(), 0);
+                        v4_boxes.insert(new_node.get_v4_addr(), node_id);
                     }
                     if !v6_boxes.contains_key(&new_node.get_v6_addr()) {
-                        v6_boxes.insert(new_node.get_v6_addr(), 0);
+                        v6_boxes.insert(new_node.get_v6_addr(), node_id);
                     }
                     nodes.insert(node_id, new_node);
                     println!("{:?}", nodes[&node_id]);
@@ -78,6 +78,7 @@ fn main() {
             // New status
             2 => {
                 let node = nodes.get_mut(&buffer[1]).unwrap();
+                let node_id = node.get_node_id();
                 let old_avg = node.get_avg_total_load();
                 println!("{:?}", buffer[2]);
                 let total_load = (buffer[2] as f64/ 200 as f64) as f64;
@@ -114,18 +115,19 @@ fn main() {
                             // Check if there are other addresses available
                             let mut other_addr_free = false;
                             for value in &v4_boxes {
-                                if value.0 != &node.get_v4_addr() && value.1 == &0 {
+                                if value.0 != &nodes.get(value.1).unwrap().get_v4_addr() && nodes.get(value.1).unwrap().get_v4_state() {
                                     other_addr_free = true;
                                     break;
                                 }
                             }
                             for value in &v6_boxes {
-                                if value.0 != &node.get_v6_addr() && value.1 == &0 {
+                                if value.0 != &nodes.get(value.1).unwrap().get_v6_addr()  &&  nodes.get(value.1).unwrap().get_v6_state() {
                                     other_addr_free = true;
                                     break;
                                 }
                             }
                             if other_addr_free {
+                                let node = nodes.get_mut(&node_id).unwrap();
                                 if node.get_v4_state() || node.get_v6_state() {
                                     // Both interfaces are enabled
                                     if node.get_v4_state() && node.get_v6_state() {
