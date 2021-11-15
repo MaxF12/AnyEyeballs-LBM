@@ -176,10 +176,17 @@ fn main() {
                             for node in &nodes {
                                 if node.0 == &max_node {
                                     if active_node {
-                                        node.1.check_rel_loads_and_shutdown(config.relv_threshold);
+                                        if node.1.get_v4_state() && node.1.get_v6_state() {
+                                            node.1.check_rel_loads_and_shutdown(config.relv_threshold);
+                                            // If we are getting close to maximum utilization, shut down the other interface as well
+                                        } else if node.1.get_avg_total_load() >= 0.9 && node.1.get_v6_state() {
+                                            node.1.send_shutdown_v6();
+                                        } else if node.1.get_avg_total_load() >= 0.9 && node.1.get_v4_state(){
+                                            node.1.send_shutdown_v4();
+                                        }
                                     }
                                 } else {
-                                    if node.1.get_avg_total_load() < config.load_threshold {
+                                    if node.1.get_avg_total_load() <= config.load_threshold {
                                         if !node.1.get_v4_state() {
                                             println!("Sending start to v4 node {:?}", node.0);
                                             node.1.send_start_v4();
