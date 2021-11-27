@@ -19,10 +19,10 @@ pub struct Config {
 impl Config {
     pub fn new(config: String) -> Config{
         let conf: toml::Value = toml::from_str(&*config).unwrap();
-        let addr = format!("{}:{}", conf["orchestrator"]["ip"].as_str().unwrap(), conf["orchestrator"]["port"].as_str().unwrap());
+        let addr = format!("{}:{}", conf["lbm"]["ip"].as_str().unwrap(), conf["lbm"]["port"].as_str().unwrap());
         Config{
             orch_addr: addr,
-            max_nodes: conf["orchestrator"]["max_nodes"].as_integer().unwrap() as u8,
+            max_nodes: conf["lbm"]["max_nodes"].as_integer().unwrap() as u8,
             load_threshold:conf["balancer"]["load_threshold"].as_float().unwrap(),
             relv_threshold: conf["balancer"]["relative_threshold"].as_float().unwrap(),
             log_file: conf["log"]["file"].as_str().unwrap().parse().unwrap(),
